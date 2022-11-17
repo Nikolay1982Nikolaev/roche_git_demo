@@ -40,10 +40,13 @@
 #'
 #' @export
 
+
+# ====================
 library(dplyr)
 library(assertthat)
-library(testthat)
 library(rgdsr)
+library(testthat)
+# ====================
 
 qc_negative_value <- function(df, domain_name) {
   assert_that(is.data.frame(df), 
@@ -95,9 +98,7 @@ qc_negative_value <- function(df, domain_name) {
 
 
 
-
-
-
+# ====================# ====================# ====================# ====================# ====================
 test_that("check_missing runs successfully", {
   df_wrong <- list(1,2,3,4,5)
   
@@ -139,8 +140,6 @@ test_that("check_missing runs successfully", {
   expect_equal(summary_df$Variable, c("AGE", "AGE", "AGE", "EXDOSE", "EXDOSE"))
   
 })
-
-
 
 
 
