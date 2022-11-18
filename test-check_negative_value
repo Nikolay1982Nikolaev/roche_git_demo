@@ -1,0 +1,42 @@
+
+test_that("check_missing runs successfully", {
+  df_wrong <- list(1,2,3,4,5)
+  
+  df_wrong_domain <- data.frame(
+    DOMAIN = c("Io", "io", "aa", "EX", "EX"),
+    AGE =    c("10","10", "0", "0", "-3"),
+    EXDUR =  c("-PT1H","PT3S","-P3S", "", ""),
+    EXDOSE = c("100", "100", "", "0", "-40"),
+    stringsAsFactors = F
+  )
+  
+  df <- data.frame(
+    DOMAIN = c("EX", "EX", "EX", "EX", "EX", "EX"),
+    AGE =    c("10","-10", "0", "0", "-3", "-111"),
+    EXDUR =  c("-PT1H","PT3S","-P3S", "", "", "asd"),
+    EXDOSE = c("-100", "100", "", "0", "-40", "99"),
+    stringsAsFactors = F
+  )
+  
+  df_no_age_and_dose <- data.frame(
+    DOMAIN = c("EX", "EX", "EX", "EX", "EX", "EX"),
+    EXDUR =  c("-PT1H","PT3S","-P3S", "", "", "asd"),
+    stringsAsFactors = F
+  )
+  
+  summary_df <- qc_negative_value(df, "EX")
+  names_df <- names(summary_df)
+  
+  # Bad imput
+  expect_error(qc_negative_value(df_wrong, "EX"))
+  expect_error(qc_negative_value(df, EX))
+  expect_error(qc_negative_value(df_wrong_domain, "EX"))
+  expect_error(qc_negative_value(df_no_age_and_dose, "EX"))
+  
+  expect_equal(names(summary_df), c("FunctionName", "Domain", "Message", "Variable", "Value", "Record", "Severity"))
+  
+  expect_equal(summary_df$Value,  c("-10", "-3", "-111", "-100", "-40"))
+  expect_equal(summary_df$Record, c(2, 5, 6, 1, 5))
+  expect_equal(summary_df$Variable, c("AGE", "AGE", "AGE", "EXDOSE", "EXDOSE"))
+  
+})
