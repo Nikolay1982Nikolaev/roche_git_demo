@@ -1,0 +1,94 @@
+#' @title check_negative_value
+#'
+#' @description This function will check --DOSE and AGE variables in a data frame and make sure 
+#' the values are not a negative number.
+#'
+#' @param df data frame; the data to be checked
+#' @param domain_name SDTM domain name in double quotes
+#'
+#' @return Returns a data frame that contains all findings.
+#'
+#' @examples
+#' \dontrun{
+#' result <- qc_negative_value(df, "DM")
+#' }
+#'
+#' @section Result Examples:
+#' \itemize{
+#'   \item If there were no findings the returned data frame will have only 1 line with the
+#' message 'No error found.'
+#'   \item If there are any negative values present in the dataset, the returned data frame would
+#'   have entries like this:
+#'   \tabular{lllllll}{
+#'  \strong{Name} \tab \strong{Domain} \tab \strong{Message} \tab \strong{Variable} \tab 
+#'  \strong{Value} \tab \strong{Record} \tab  \strong{Severity} \cr
+#'  qc_negative_value \tab DM \tab Negative value for --DOSE, AGE. \tab AGE 
+#'  \tab -76 \tab 1 \tab Critical
+#'  }
+#' }
+#'
+#' @section Actions to be taken:
+#' If scrubJ finds any negative values, inspect the source data if these values are indeed negative
+#' and not due to a mapping error.
+#' If negative values can not be resolved then provide comments in the applicable section of 
+#' the Rmd with a full explanation.
+#'
+#'
+#' @import dplyr
+#' @importFrom assertthat assert_that
+#' @importFrom rgdsr sdtmv_domain_exists
+#'
+#' @export
+#' 
+
+
+qc_negative_value <- function(df, domain_name) {
+  assert_that(is.data.frame(df), 
+              msg = "The passed object is not data.frame")
+  assert_that(is.character(domain_name),
+              msg = "Please insert valid domain name.")
+  assert_that(length(unique(df$DOMAIN)) == 1, 
+              msg = "Something wrong with the domain. Please check that.")
+  assert_that(length(df <- df %>% select(matches("(DOSE$|AGE$)"))) != 0, 
+              msg = "The DOSE and AGE variables are not in the dataset.")
+  
+  df <- df %>% select(matches("(DOSE$|AGE$)"))
+  
+  length_df <- length(df)
+  var_name <- names(df)
+  output_df <- data.frame(stringsAsFactors = F)
+  df$id = 1:nrow(df)
+  
+  for (i in 1:length_df) {
+    df2 <- df %>%
+      select(one_of(var_name[i]), id) %>%
+      filter(eval(parse(text = noquote(var_name[i]))) < 0 & 
+               eval(parse(text = noquote(var_name[i]))) != "")
+    
+    if (nrow(df2) > 0) { temp_df <- df2 %>% mutate(
+      FunctionName = "qc_negative_value",
+      Domain       = domain_name,
+      Message      = "Negative value for --DOSE, AGE.",
+      Variable     = var_name[i],
+      Value        = eval(parse(text = noquote(var_name[i]))),
+      Record       = id,
+      Severity     = "Critical")     %>%
+      select(FunctionName, Domain, Message, Variable, Value, Record, Severity)
+    } else {
+      temp_df <- data.frame(FunctionName     = "qc_negative_value", 
+                            Domain           = domain_name, 
+                            Message          = "No error found.", 
+                            Variable         = var_name[i], 
+                            Value            = NA, 
+                            Record           = NA, 
+                            Severity         = NA, 
+                            stringsAsFactors = FALSE)
+    }
+    
+    output_df <- rbind(output_df, temp_df)
+  }
+  return(output_df)
+}
+  
+
+
